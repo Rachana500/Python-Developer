@@ -1,0 +1,141 @@
+import csv
+import os
+from datetime import datetime
+from collections import defaultdict
+
+FILE_NAME = "expenses.csv"
+
+def create_file():
+    if not os.path.exists(FILE_NAME):
+        with open(FILE_NAME, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                "Date",
+                "Category",
+                "Description",
+                "Amount"
+            ])
+
+def add_expense():
+    date = input(
+        "Enter date (YYYY-MM-DD) or press Enter for today: "
+    ).strip()
+
+    if not date:
+        date = datetime.today().strftime("%Y-%m-%d")
+
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+        amount = float(input("Enter amount: "))
+
+        if amount <= 0:
+            print("Amount must be greater than zero.")
+            return
+
+    except ValueError:
+        print("Please enter a valid date and amount.")
+        return
+
+    category = input("Enter category: ").strip() or "Other"
+    description = input("Enter description: ").strip()
+
+    create_file()
+
+    with open(FILE_NAME, "a", newline="") as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            date,
+            category,
+            description,
+            amount
+        ])
+
+    print("Expense added successfully.")
+
+def view_expenses():
+    create_file()
+
+    total = 0
+
+    with open(FILE_NAME, "r") as file:
+        reader = csv.DictReader(file)
+
+        print("\n--- Expense Details ---")
+
+        for row in reader:
+            amount = float(row["Amount"])
+            total += amount
+
+            print(
+                row["Date"],
+                row["Category"],
+                row["Description"],
+                amount
+            )
+
+    print(f"Total Expenses: Rs. {total:.2f}")
+
+def monthly_report():
+    month = input("Enter month (YYYY-MM): ").strip()
+
+    try:
+        datetime.strptime(month, "%Y-%m")
+    except ValueError:
+        print("Please use YYYY-MM format.")
+        return
+
+    create_file()
+    category_totals = defaultdict(float)
+
+    with open(FILE_NAME, "r") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            if row["Date"].startswith(month):
+                category_totals[row["Category"]] += float(
+                    row["Amount"]
+                )
+
+    if not category_totals:
+        print("No expenses found for this month.")
+        return
+
+    print(f"\n--- Monthly Report: {month} ---")
+
+    for category, amount in sorted(category_totals.items()):
+        print(f"{category}: Rs. {amount:.2f}")
+
+    total = sum(category_totals.values())
+    print(f"Monthly Total: Rs. {total:.2f}")
+
+def main():
+    create_file()
+
+    while True:
+        print("\n--- Expense Tracker ---")
+        print("1. Add Expense")
+        print("2. View Expenses")
+        print("3. Monthly Report")
+        print("4. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            add_expense()
+
+        elif choice == "2":
+            view_expenses()
+
+        elif choice == "3":
+            monthly_report()
+
+        elif choice == "4":
+            print("Thank you for using Expense Tracker.")
+            break
+
+        else:
+            print("Invalid choice.")
+
+if __name__ == "__main__":
+    main()
